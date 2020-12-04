@@ -1,6 +1,8 @@
 use crate::source_pos::SourcePos;
 use crate::source_pos::Comment;
 use crate::source_pos::PosRange;
+use crate::values::ValueNodeTrait;
+use crate::values::_ValueNodeTrait;
 #[macro_use]
 use dyn_clone::{self, clone_trait_object, DynClone};
 
@@ -108,6 +110,7 @@ impl NodeTrait for TerminalNode {
     }
 }
 
+#[derive(Clone)]
 pub struct TokenInfo {
     pos_range: PosRange,
     raw_text: String,
@@ -219,6 +222,26 @@ impl RuneNode {
             terminal_node: info.as_terminal_node(),
             rune: c
         }
+    }
+
+    pub fn rune(&self) -> char {
+        self.rune
+    }
+}
+
+impl ValueNodeTrait<char> for RuneNode {
+    fn as_node_trait(&self) -> Box<dyn NodeTrait> {
+        return Box::new(self.clone())
+    }
+
+    fn as_value_node_trait(&self) -> Box<dyn _ValueNodeTrait<char>> {
+        return Box::new(self.clone())
+    }
+}
+
+impl _ValueNodeTrait<char> for RuneNode {
+    fn value(self) -> char {
+        return self.rune
     }
 }
 
