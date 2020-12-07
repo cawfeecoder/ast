@@ -4,14 +4,20 @@ use crate::node::{TerminalNode, TokenInfo, CompositeNode, NodeTrait, RuneNode};
 use crate::source_pos::{SourcePos, Comment};
 use crate::identifiers::KeywordNode;
 use std::fmt::Debug;
+use dyn_clone::DynClone;
+use dyn_clone::clone_trait_object;
 
-pub trait _ValueNodeTrait<T> {
+pub trait _ValueNodeTrait<T>: DynClone {
     fn value(self) -> T;
 }
+
+clone_trait_object!(<T> _ValueNodeTrait<T>);
 pub trait ValueNodeTrait<T>: _ValueNodeTrait<T> + NodeTrait {
     fn as_node_trait(&self) -> Box<dyn NodeTrait>;
     fn as_value_node_trait(&self) -> Box<dyn _ValueNodeTrait<T>>;
 }
+
+clone_trait_object!(<T> ValueNodeTrait<T>);
 
 pub trait StringValueNode {
     fn as_string(self) -> String;
@@ -62,6 +68,7 @@ impl NodeTrait for StringLiteralNode {
     }
 }
 
+#[derive(Clone)]
 pub struct CompoundStringLiteralNode {
     composite_node: CompositeNode,
     val: String
@@ -99,9 +106,14 @@ impl StringValueNode for CompoundStringLiteralNode {
     }
 }
 
-pub trait IntValueNodeTrait {
+pub trait _IntValueNodeTrait {
     fn as_int64(&self) -> (i64, bool);
     fn as_uint64(&self) -> (u64, bool);
+}
+
+pub trait IntValueNodeTrait: _IntValueNodeTrait + NodeTrait {
+    fn as_node_trait(&self) -> Box<dyn NodeTrait>;
+    fn as_int_value_node_trait(&self) -> Box<dyn _IntValueNodeTrait>;
 }
 
 #[derive(Clone)]
@@ -149,7 +161,7 @@ impl _ValueNodeTrait<u64> for UintLiteralNode {
     }
 }
 
-impl IntValueNodeTrait for UintLiteralNode {
+impl _IntValueNodeTrait for UintLiteralNode {
     fn as_int64(&self) -> (i64, bool) {
         if self.val as i64 > i64::MAX {
             return (0, false);
@@ -161,7 +173,7 @@ impl IntValueNodeTrait for UintLiteralNode {
         return (self.val, true)
     }
 }
-
+#[derive(Clone)]
 pub struct PositiveUintLiteralNode {
     composite_node: CompositeNode,
     plus: RuneNode,
@@ -189,7 +201,7 @@ impl _ValueNodeTrait<u64> for PositiveUintLiteralNode {
     }
 }
 
-impl IntValueNodeTrait for PositiveUintLiteralNode {
+impl _IntValueNodeTrait for PositiveUintLiteralNode {
     fn as_int64(&self) -> (i64, bool) {
         if self.val as i64 > i64::MAX {
             return (0, false)
@@ -201,6 +213,7 @@ impl IntValueNodeTrait for PositiveUintLiteralNode {
     }
 }
 
+#[derive(Clone)]
 struct NegativeIntLiteralNode {
     composite_node: CompositeNode,
     minus: RuneNode,
@@ -228,7 +241,7 @@ impl _ValueNodeTrait<i64> for NegativeIntLiteralNode {
     }
 }
 
-impl IntValueNodeTrait for NegativeIntLiteralNode {
+impl _IntValueNodeTrait for NegativeIntLiteralNode {
     fn as_int64(&self) -> (i64, bool) {
         return (self.val, true)
     }
@@ -241,9 +254,11 @@ impl IntValueNodeTrait for NegativeIntLiteralNode {
     }
 }
 
-pub trait _FloatValueNodeTrait {
+pub trait _FloatValueNodeTrait: DynClone {
     fn as_float(&self) -> f64;
 }
+
+clone_trait_object!(_FloatValueNodeTrait);
 
 impl Debug for _FloatValueNodeTrait {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
@@ -257,6 +272,8 @@ pub trait FloatValueNodeTrait: _FloatValueNodeTrait + NodeTrait {
     fn as_node_trait(&self) -> Box<dyn NodeTrait>;
     fn as_float_value_node_trait(&self) -> Box<dyn _FloatValueNodeTrait>;
 }
+
+clone_trait_object!(FloatValueNodeTrait);
 
 impl Debug for dyn  FloatValueNodeTrait {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
@@ -322,6 +339,7 @@ impl NodeTrait for FloatLiteralNode {
     }
 }
 
+#[derive(Clone)]
 pub struct SpecialFloatLiteralNode {
     keyword_node: KeywordNode,
     val: f64
@@ -354,7 +372,7 @@ impl _ValueNodeTrait<f64> for SpecialFloatLiteralNode {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SignedFloatLiteralNode {
     composite_node: CompositeNode,
     sign: RuneNode,
@@ -393,6 +411,7 @@ impl _FloatValueNodeTrait for SignedFloatLiteralNode {
     }
 }
 
+#[derive(Clone)]
 struct BoolLiteralNode {
     keyword_node: KeywordNode,
     val: bool
@@ -413,6 +432,7 @@ impl _ValueNodeTrait<bool> for BoolLiteralNode {
     }
 }
 
+#[derive(Clone)]
 struct ArrayLiteralNode<T> {
     composite_node: CompositeNode,
     open_bracket: RuneNode,
@@ -446,7 +466,7 @@ impl<T> ArrayLiteralNode<T> {
     }
 }
 
-impl<T> _ValueNodeTrait<Vec<Box<dyn ValueNodeTrait<T>>>> for ArrayLiteralNode<T> {
+impl<T: Clone> _ValueNodeTrait<Vec<Box<dyn ValueNodeTrait<T>>>> for ArrayLiteralNode<T> {
     fn value(self) -> Vec<Box<dyn ValueNodeTrait<T>>> {
         return self.elements
     }

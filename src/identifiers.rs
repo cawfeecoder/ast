@@ -4,8 +4,13 @@ use crate::source_pos::{SourcePos, Comment};
 
 pub type Identifier = String;
 
-pub trait IdentValueNodeTrait {
+pub trait _IdentValueNodeTrait {
     fn as_identifier(&self) -> Identifier;
+}
+
+pub trait IdentValueNodeTrait: _IdentValueNodeTrait + NodeTrait {
+    fn as_node_trait(&self) -> Box<dyn NodeTrait>;
+    fn as_ident_value_node_trait(&self) -> Box<dyn _IdentValueNodeTrait>;
 }
 
 #[derive(Clone)]
@@ -54,6 +59,7 @@ impl _ValueNodeTrait<Identifier> for IdentNode {
         return self.as_identifier()
     }
 }
+#[derive(Clone)]
 pub struct CompoundIdentNode {
     composite_node: CompositeNode,
     leading_dot: Option<RuneNode>,
@@ -101,7 +107,7 @@ impl _ValueNodeTrait<String> for CompoundIdentNode {
     }
 }
 
-impl IdentValueNodeTrait for CompoundIdentNode {
+impl _IdentValueNodeTrait for CompoundIdentNode {
     fn as_identifier(&self) -> Identifier {
         return self.val.clone()
     }

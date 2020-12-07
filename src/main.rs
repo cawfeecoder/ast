@@ -12,6 +12,12 @@ mod values;
 use values::{SignedFloatLiteralNode, FloatLiteralNode};
 mod identifiers;
 use identifiers::{IdentNode};
+mod options;
+use options::{OptionNode};
+mod enums;
+use enums::EnumNode;
+mod message;
+use message::MessageNode;
 
 fn main() {
     let s = SourcePos::new("test.yaml");
